@@ -2,53 +2,48 @@
 
 import sqlite3
 
-# utworzenie połączenia z bazą
+# connect to base
 con = sqlite3.connect('SystemDB.db')
-
-# dostęp do kolumn przez indeksy i przez nazwy
 con.row_factory = sqlite3.Row
-
-# utworzenie obiektu kursora
 cur = con.cursor()
 
-# model bazy
+# base model
 cur.execute("""
     CREATE TABLE IF NOT EXISTS Workers (
         IdW INTEGER PRIMARY KEY ASC,
-        FirstName varchar(250) NOT NULL,
-        LastName varchar(250) NOT NULL,
+        FirstName varchar(30) NOT NULL,
+        LastName varchar(30) NOT NULL,
         LoggedIn BIT NOT NULL
     )""")
 
-cur.execute("""
+cur.executescript("""
     CREATE TABLE IF NOT EXISTS Clients (
         IdC INTEGER PRIMARY KEY ASC,
-        NameC varchar(250) NOT NULL
+        NameC varchar(30) NOT NULL
     )""")
 
 cur.execute("""
-    DROP TABLE IF EXISTS Cards;
     CREATE TABLE IF NOT EXISTS Cards (
-        IdCard INTEGER PRIMARY KEY ASC,
-        Worker INTEGER NOT NULL,
-        FOREIGN KEY(Worker) REFERENCES Workers(IdW)
+        IdCard varchar(30) PRIMARY KEY ASC,
+        Worker INTEGER NULL,
+        FOREIGN KEY (Worker) REFERENCES Workers(IdW)
     )""")
 
 cur.execute("""
     CREATE TABLE IF NOT EXISTS LogsInOut (
         IdL INTEGER PRIMARY KEY ASC,
         Client INTEGER NOT NULL,
-        FOREIGN KEY(Client) REFERENCES Clients(IdC),
         Worker INTEGER NOT NULL,
-        FOREIGN KEY(Worker) REFERENCES Workers(IdW)
         InOut CHAR NOT NULL,
-        DateL DATETIME NOT NULL
+        DateL DATETIME NOT NULL,
+        FOREIGN KEY (Client) REFERENCES Clients(IdC),
+        FOREIGN KEY (Worker) REFERENCES Workers(IdW)
     )""")
 
 cur.execute("""
     CREATE TABLE IF NOT EXISTS UnknownUsages (
         IdU INTEGER PRIMARY KEY ASC,
-        Card INTEGER NOT NULL,
-        FOREIGN KEY(Card) REFERENCES Cards(IdC),
-        DateU DATETIME NOT NULL
+        Card varchar(30) NOT NULL,
+        DateU DATETIME NOT NULL,
+        FOREIGN KEY (Card) REFERENCES Cards(IdC)
     )""")
