@@ -1,115 +1,226 @@
+#!/usr/bin/env python3
+
 import datetime
-import DBPackage.DBconfig as db
+import sqlite3
 
 
 def addClient(nameC):
-    db.cur.execute('INSERT INTO Clients VALUES(NULL, ?);', (nameC,))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('INSERT INTO Clients VALUES(NULL, ?);', (nameC,))
+    con.commit()
+    cur.execute('SELECT * FROM Clients ORDER BY IdC DESC LIMIT 1;')
+    newClient = cur.fetchone()
+    con.close()
+    return newClient
 
 
 def addWorker(firstName, lastName):
-    db.cur.execute('INSERT INTO Workers VALUES(NULL, ?, ?, ?);',
-                   (firstName, lastName, 0))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('INSERT INTO Workers VALUES(NULL, ?, ?, ?);',
+                (firstName, lastName, 0))
+    con.commit()
+    cur.execute('SELECT * FROM Workers ORDER BY IdW DESC LIMIT 1;')
+    newWorker = cur.fetchone()
+    con.close()
+    return newWorker
 
 
 def addCard(cardId, workerId):
-    db.cur.execute('INSERT INTO Cards VALUES(?, ?);', (cardId, workerId))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('INSERT INTO Cards VALUES(?, ?);', (cardId, workerId))
+    con.commit()
+    con.close()
 
 
-def addUnknownUsage(cardId):
-    db.cur.execute('INSERT INTO UnknownUsages VALUES(NULL, ?, ?);',
-                   (cardId, datetime.datetime.now()))
-    db.con.commit()
+def addUnknownUsage(clientId, cardId, date):
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('INSERT INTO UnknownUsages VALUES(NULL, ?, ?, ?);',
+                (clientId, cardId, date))
+    con.commit()
+    con.close()
 
 
-def addLogInOut(clientId, workerId, inOut):
-    db.cur.execute('INSERT INTO LogsInOut VALUES(NULL, ?, ?, ?, ?);',
-                   (clientId, workerId, inOut, datetime.datetime.now()))
-    db.con.commit()
+def addLogInOut(clientId, workerId, inOut, date):
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('INSERT INTO LogsInOut VALUES(NULL, ?, ?, ?, ?);',
+                (clientId, workerId, inOut, date))
+    con.commit()
+    con.close()
 
 
 def deleteClient(clientId):
-    db.cur.execute('DELETE FROM Clients WHERE IdC=?', (clientId,))
-    db.con.commit()
+    if(clientId != 1):
+        con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('UPDATE LogsInOut SET Client=1 WHERE Client=?', (clientId,))
+    cur.execute('UPDATE UnknownUsages SET Client=1 WHERE Client=?', (clientId,))
+    cur.execute('DELETE FROM Clients WHERE IdC=?', (clientId,))
+    con.commit()
+    con.close()
 
 
 def setCard(cardId, workerId):
-    db.cur.execute('UPDATE Cards SET Worker=? WHERE IdCard=?',
-                   (workerId, cardId))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('UPDATE Cards SET Worker=? WHERE IdCard=?',
+                (workerId, cardId))
+    con.commit()
+    con.close()
 
 
 def logInWorker(workerId):
-    db.cur.execute('UPDATE Workers SET LoggedIn=? WHERE IdW=?', (1, workerId))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('UPDATE Workers SET LoggedIn=? WHERE IdW=?', (1, workerId))
+    con.commit()
+    con.close()
 
 
 def logOutWorker(workerId):
-    db.cur.execute('UPDATE Workers SET LoggedIn=? WHERE IdW=?', (0, workerId))
-    db.con.commit()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('UPDATE Workers SET LoggedIn=? WHERE IdW=?', (0, workerId))
+    con.commit()
+    con.close()
 
 
 def isWorkerLoggedIn(workerId):
-    db.cur.execute('SELECT LoggedIn FROM Workers WHERE IdW=?', (workerId,))
-    if db.cur.fetchone()['LoggedIn'] == 1:
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('SELECT LoggedIn FROM Workers WHERE IdW=?', (workerId,))
+    loggedIn = cur.fetchone()['LoggedIn'] == 1
+    con.close()
+    if loggedIn:
         return True
     else:
         return False
 
 
 def getWorkerData(workerId):
-    db.cur.execute(
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
         'SELECT IdW, FirstName, LastName, LoggedIn FROM Workers WHERE IdW=?', (workerId,))
-    return db.cur.fetchone()
+    worker = cur.fetchone()
+    con.close()
+    return worker
 
 
 def getClientsList():
-    db.cur.execute('SELECT IdC, NameC From Clients')
-    return db.cur.fetchall()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('SELECT IdC, NameC FROM Clients WHERE IdC>1')
+    clientsList = cur.fetchall()
+    con.close()
+    return clientsList
 
 
 def getWorkersList():
-    db.cur.execute('SELECT IdW, FirstName, LastName, LoggedIn From Workers')
-    return db.cur.fetchall()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('SELECT IdW, FirstName, LastName, LoggedIn From Workers')
+    workersList = cur.fetchall()
+    con.close()
+    return workersList
 
 
 def getCardsList():
-    db.cur.execute(
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
         'SELECT IdCard, Worker, FirstName, LastName From Cards JOIN Workers ON Worker = IdW ')
-    takenCards = db.cur.fetchall()
-    db.cur.execute('SELECT IdCard, Worker From Cards WHERE Worker is null')
-    return takenCards + db.cur.fetchall()
+    takenCards = cur.fetchall()
+    cur.execute('SELECT IdCard, Worker From Cards WHERE Worker is null')
+    cardsList = takenCards + cur.fetchall()
+    con.close()
+    return cardsList
 
 
 def getUnknownUsagesList():
-    db.cur.execute('SELECT IdU, Card, DateU From UnknownUsages')
-    return db.cur.fetchall()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
+        'SELECT IdU, Client, NameC, Card, DateU From UnknownUsages JOIN Clients ON Client = IdC')
+    uuList = cur.fetchall()
+    con.close()
+    return uuList
 
 
 def getLogsInOutList():
-    db.cur.execute(
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
         'SELECT IdL, Client, NameC, Worker, FirstName, LastName, InOut, DateL From LogsInOut JOIN Clients JOIN Workers ON Client = IdC and Worker = IdW')
-    return db.cur.fetchall()
+    lioList = cur.fetchall()
+    con.close()
+    return lioList
 
 
 def getCardWorker(cardId):
-    db.cur.execute(
-        'SELECT Cards.Worker, Workers.FirstName, Workers.LastName, Workers.LoggedIn FROM Cards JOIN Workers ON Cards.Worker = Workers.IdW WHERE IdCard=?', (cardId,))
-    return db.cur.fetchone()
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
+        'SELECT Worker, FirstName, LastName, LoggedIn FROM Cards JOIN Workers ON Cards.Worker = Workers.IdW WHERE IdCard=?', (cardId,))
+    cardWorker = cur.fetchone()
+    con.close()
+    return cardWorker
 
 
 def doesCardExist(cardId):
-    db.cur.execute(
-        'SELECT IdCard FROM Cards WHERE IdCard=?', (cardId,))
-    if db.cur.fetchone() is None:
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('SELECT IdCard FROM Cards WHERE IdCard=?', (cardId,))
+    cardExist = cur.fetchone() is None
+    con.close()
+    if cardExist:
+        return False
+    else:
+        return True
+
+
+def doesClientExist(clientId):
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
+        'SELECT IdC FROM Clients WHERE IdC=?', (clientId,))
+    clientExist = cur.fetchone() is None
+    con.close()
+    if clientExist:
         return False
     else:
         return True
 
 
 def getWorkersInOut(workerId):
-    db.cur.execute(
+    con = sqlite3.connect('SystemDB.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
         'SELECT InOut, DateL FROM LogsInOut WHERE Worker=?', (workerId,))
-    return db.cur.fetchall()
+    workersInOut = cur.fetchall()
+    con.close()
+    return workersInOut
